@@ -9,6 +9,7 @@ from google import genai
 from read_context import get_issue, get_file_contents
 from verify import run_tests, rollback
 from open_pr import push_branch, get_diff_summary, open_pr
+from safety import check_budget, record_pr
 
 TESTING_REPO_PATH = "/Users/raghav.s18/Documents/Projects/Testing"
 TARGET_FILE = "main.py"
@@ -64,6 +65,11 @@ REPO = "raghavsaravanan/Testing"
 ISSUE_NUMBER = 1
 
 if __name__ == "__main__":
+    allowed, reason = check_budget(REPO)
+    if not allowed:
+        print(f"BUDGET CHECK FAILED: {reason}")
+        raise SystemExit(1)
+
     issue = get_issue(REPO, ISSUE_NUMBER)
     code = get_file_contents(TESTING_REPO_PATH, TARGET_FILE)
 
@@ -83,6 +89,7 @@ if __name__ == "__main__":
         diff_summary = get_diff_summary(TESTING_REPO_PATH, branch_name)
         pr_url = open_pr(TESTING_REPO_PATH, REPO, branch_name, ISSUE_NUMBER, rationale, diff_summary)
         print(f"\nPR opened: {pr_url}")
+        record_pr(REPO)
 
     else:
         print(f"\nVERIFICATION FAILED - rolling back branch '{branch_name}'. No PR will be opened.")

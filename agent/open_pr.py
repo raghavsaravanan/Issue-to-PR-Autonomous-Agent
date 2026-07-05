@@ -4,11 +4,14 @@ with the agent's rationale in the body.
 """
 
 import subprocess
+from safety import assert_never_force_push
 
 
 def push_branch(repo_path: str, branch_name: str) -> None:
     """Push the candidate branch to GitHub."""
-    subprocess.run(["git", "push", "-u", "origin", branch_name], cwd=repo_path, check=True)
+    args = ["git", "push", "-u", "origin", branch_name]
+    assert_never_force_push(args)
+    subprocess.run(args, cwd=repo_path, check=True)
 
 
 def get_diff_summary(repo_path: str, branch_name: str, base_branch: str = "main") -> str:
