@@ -1,0 +1,24 @@
+name: Agent Core
+
+on:
+  workflow_call:
+    inputs:
+      issue_number:
+        required: true
+        type: string
+      issue_title:
+        required: true
+        type: string
+      issue_body:
+        required: true
+        type: string
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show the issue that triggered this
+        run: |
+          echo "Issue #${{ inputs.issue_number }}: ${{ inputs.issue_title }}"
+          echo "Body:"
+          echo "${{ inputs.issue_body }}"
