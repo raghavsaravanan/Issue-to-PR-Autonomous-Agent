@@ -14,6 +14,14 @@ TARGET_FILE = "main.py"
 
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
+def strip_code_fence(text: str) -> str:
+    """Remove a leading/trailing ``` fence if the model added one despite instructions."""
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1]
+    if text.endswith("```"):
+        text = text.rsplit("```", 1)[0]
+    return text.strip()
 
 def propose_fix(issue_title: str, issue_body: str, code: str) -> tuple[str, str]:
     """Ask AI Agent to fix the bug. Returns (fixed_code, rationale)."""
@@ -38,7 +46,7 @@ Fix the bug. Respond in exactly this format, with no other text:
         contents=prompt,
     )
     text = response.text
-    fixed_code = text.split("===FIXED_CODE===")[1].split("===RATIONALE===")[0].strip()
+    fixed_code = strip_code_fence(text.split("===FIXED_CODE===")[1].split("===RATIONALE===")[0])
     rationale = text.split("===RATIONALE===")[1].strip()
     return fixed_code, rationale
 
@@ -71,4 +79,3 @@ if __name__ == "__main__":
     else:
         print(f"\nVERIFICATION FAILED - rolling back branch '{branch_name}'. No PR will be opened.")
         rollback(TESTING_REPO_PATH, branch_name)
-
