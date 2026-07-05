@@ -1,26 +1,25 @@
 """
-Step 4: the verification gate - the agent is not allowed to open a PR
-unless the tests actually pass on its candidate branch.
+The verification gate - the agent is not allowed to open a PR unless the
+tests actually pass on its candidate branch. Generalized to run whatever
+test command a given issue needs (a bare script or a pytest suite), with a
+hard wall-clock timeout so a hung/infinite-loop bug can't hang the agent.
 """
 
 import subprocess
 
-TARGET_FILE = "main.py"
 
+def run_tests(repo_path: str, test_cmd: list[str], timeout: int = 60) -> tuple[bool, str]:
+    """Run the test command. Returns (passed, output) - output is empty on success."""
+    try:
+        result = subprocess.run(
+            test_cmd, cwd=repo_path, capture_output=True, text=True, timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        return False, f"Test run timed out after {timeout}s (possible infinite loop)."
 
-def run_tests(repo_path: str) -> bool:
-    """Run the target repo's test file. Return True if it passes."""
-    result = subprocess.run(
-        ["python3", TARGET_FILE],
-        cwd=repo_path,
-        capture_output=True,
-        text=True,
-    )
     if result.returncode != 0:
-        print("=== TEST FAILURE OUTPUT ===")
-        print(result.stderr)
-        return False
-    return True
+        return False, (result.stdout + "\n" + result.stderr).strip()
+    return True, ""
 
 
 def rollback(repo_path: str, branch_name: str) -> None:
