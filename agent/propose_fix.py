@@ -7,6 +7,7 @@ import os
 import subprocess
 from google import genai
 from read_context import get_issue, get_file_contents
+from verify import run_tests, rollback
 
 TESTING_REPO_PATH = "/Users/raghav.s18/Documents/Projects/Testing"
 TARGET_FILE = "main.py"
@@ -62,5 +63,12 @@ if __name__ == "__main__":
     print("\n=== FIXED CODE ===")
     print(fixed_code)
 
-    apply_fix_to_branch(fixed_code, "agent/fix-issue-1")
-    print("\nCommitted fix to branch 'agent/fix-issue-1' in the Testing repo.")
+    branch_name = "agent/fix-issue-1"
+    apply_fix_to_branch(fixed_code, branch_name)
+
+    if run_tests(TESTING_REPO_PATH):
+        print(f"\nVERIFICATION PASSED - branch '{branch_name}' is ready to become a PR.")
+    else:
+        print(f"\nVERIFICATION FAILED - rolling back branch '{branch_name}'. No PR will be opened.")
+        rollback(TESTING_REPO_PATH, branch_name)
+
