@@ -8,6 +8,7 @@ import subprocess
 from google import genai
 from read_context import get_issue, get_file_contents
 from verify import run_tests, rollback
+from open_pr import push_branch, get_diff_summary, open_pr
 
 TESTING_REPO_PATH = "/Users/raghav.s18/Documents/Projects/Testing"
 TARGET_FILE = "main.py"
@@ -59,9 +60,11 @@ def apply_fix_to_branch(fixed_code: str, branch_name: str) -> None:
     subprocess.run(["git", "add", TARGET_FILE], cwd=TESTING_REPO_PATH, check=True)
     subprocess.run(["git", "commit", "-m", "Agent: candidate fix"], cwd=TESTING_REPO_PATH, check=True)
 
+REPO = "raghavsaravanan/Testing"
+ISSUE_NUMBER = 1
 
 if __name__ == "__main__":
-    issue = get_issue("raghavsaravanan/Testing", 1)
+    issue = get_issue(REPO, ISSUE_NUMBER)
     code = get_file_contents(TESTING_REPO_PATH, TARGET_FILE)
 
     fixed_code, rationale = propose_fix(issue["title"], issue["body"], code)
@@ -76,6 +79,12 @@ if __name__ == "__main__":
 
     if run_tests(TESTING_REPO_PATH):
         print(f"\nVERIFICATION PASSED - branch '{branch_name}' is ready to become a PR.")
+        push_branch(TESTING_REPO_PATH, branch_name)
+        diff_summary = get_diff_summary(TESTING_REPO_PATH, branch_name)
+        pr_url = open_pr(TESTING_REPO_PATH, REPO, branch_name, ISSUE_NUMBER, rationale, diff_summary)
+        print(f"\nPR opened: {pr_url}")
+
     else:
         print(f"\nVERIFICATION FAILED - rolling back branch '{branch_name}'. No PR will be opened.")
         rollback(TESTING_REPO_PATH, branch_name)
+
